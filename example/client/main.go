@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("error: %s", err)
 	}
 
-	greeterId := reply.(*example.MakeGreeterReply).GreeterID
+	greeterId := reply.(*coolmsg.ObjectCreated).Id
 
 	log.Printf("Saying hello to our new greeter...")
 
@@ -38,7 +38,7 @@ func main() {
 	log.Printf("Got a reply from: %s", reply.(*example.Hello).From)
 
 	log.Printf("destroying the greeter...")
-	reply, err = client.Send(greeterId, &example.Destroy{})
+	reply, err = client.Send(greeterId, &coolmsg.Clunk{})
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}

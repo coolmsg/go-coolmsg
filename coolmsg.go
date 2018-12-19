@@ -17,6 +17,10 @@ const (
 	TYPE_ERR = 0x81aba3f7522edc6b
 	// From spec
 	TYPE_OK = 0xd4924862b91c639d
+	// From spec
+	TYPE_CLUNK = 0xcf3a50d623ee637d
+	// From spec
+	TYPE_OBJECT_CREATED = 0xd782cf4b395eca05
 
 	// From spec
 	ERRCODE_OBJECT_NOT_EXIST = 0xab0547366de885bc
@@ -613,6 +617,8 @@ func RegisterError(code uint64, mk func(e *Error) error) {
 func RegisterStandardMessagesAndErrors(reg *Registry) {
 	reg.RegisterMessage(TYPE_ERR, func() Message { return &Error{} })
 	reg.RegisterMessage(TYPE_OK, func() Message { return &Ok{} })
+	reg.RegisterMessage(TYPE_OBJECT_CREATED, func() Message { return &ObjectCreated{} })
+	reg.RegisterMessage(TYPE_CLUNK, func() Message { return &Clunk{} })
 	reg.RegisterError(ERRCODE_OBJECT_NOT_EXIST, func(*Error) error { return ErrObjectDoesNotExist })
 	reg.RegisterError(ERRCODE_UNEXPECTED_MESSAGE, func(*Error) error { return ErrUnexpectedMessage })
 }
@@ -648,13 +654,27 @@ type Error struct {
 	Debug   string
 }
 
-func (e *Error) CoolMsg_TypeId() uint64            { return TYPE_ERR }
-func (e *Error) CoolMsg_Marshal() []byte           { return MsgpackMarshal(e) }
-func (e *Error) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, e) }
-func (e *Error) Error() string                     { return e.Display }
+func (m *Error) CoolMsg_TypeId() uint64            { return TYPE_ERR }
+func (m *Error) CoolMsg_Marshal() []byte           { return MsgpackMarshal(m) }
+func (m *Error) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, m) }
+func (m *Error) Error() string                     { return m.Display }
 
 type Ok struct{}
 
 func (m *Ok) CoolMsg_TypeId() uint64            { return TYPE_OK }
 func (m *Ok) CoolMsg_Marshal() []byte           { return []byte{} }
 func (m *Ok) CoolMsg_Unmarshal(buf []byte) bool { return true }
+
+type Clunk struct{}
+
+func (m *Clunk) CoolMsg_TypeId() uint64            { return TYPE_CLUNK }
+func (m *Clunk) CoolMsg_Marshal() []byte           { return []byte{} }
+func (m *Clunk) CoolMsg_Unmarshal(buf []byte) bool { return true }
+
+type ObjectCreated struct {
+	Id uint64
+}
+
+func (m *ObjectCreated) CoolMsg_TypeId() uint64            { return TYPE_OBJECT_CREATED }
+func (m *ObjectCreated) CoolMsg_Marshal() []byte           { return MsgpackMarshal(m) }
+func (m *ObjectCreated) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, m) }

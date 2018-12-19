@@ -19,10 +19,9 @@ import (
 // That way the number globally and uniquely identifies your message purpose and structure.
 
 const (
-	TYPE_MAKE_GREETER       = 0x9685d09cb0114f1f
-	TYPE_MAKE_GREETER_REPLY = 0xd782cf4b395eca05
-	TYPE_DESTROY            = 0xcf3a50d623ee637d
-	TYPE_HELLO              = 0xa79e175dc97ed3ab
+	TYPE_MAKE_GREETER = 0x9685d09cb0114f1f
+	TYPE_DESTROY      = 0xcf3a50d623ee637d
+	TYPE_HELLO        = 0xa79e175dc97ed3ab
 )
 
 type MakeGreeter struct {
@@ -32,20 +31,6 @@ type MakeGreeter struct {
 func (m *MakeGreeter) CoolMsg_TypeId() uint64            { return TYPE_MAKE_GREETER }
 func (m *MakeGreeter) CoolMsg_Marshal() []byte           { return coolmsg.MsgpackMarshal(m) }
 func (m *MakeGreeter) CoolMsg_Unmarshal(buf []byte) bool { return coolmsg.MsgpackUnmarshal(buf, m) }
-
-type MakeGreeterReply struct {
-	GreeterID uint64
-}
-
-func (m *MakeGreeterReply) CoolMsg_TypeId() uint64            { return TYPE_MAKE_GREETER_REPLY }
-func (m *MakeGreeterReply) CoolMsg_Marshal() []byte           { return coolmsg.MsgpackMarshal(m) }
-func (m *MakeGreeterReply) CoolMsg_Unmarshal(buf []byte) bool { return coolmsg.MsgpackUnmarshal(buf, m) }
-
-type Destroy struct{}
-
-func (m *Destroy) CoolMsg_TypeId() uint64            { return TYPE_DESTROY }
-func (m *Destroy) CoolMsg_Marshal() []byte           { return []byte{} }
-func (m *Destroy) CoolMsg_Unmarshal(buf []byte) bool { return true }
 
 type Hello struct {
 	From string
@@ -58,8 +43,6 @@ func (m *Hello) CoolMsg_Unmarshal(buf []byte) bool { return coolmsg.MsgpackUnmar
 // We must register our types before coolmsg can understand then.
 func init() {
 	coolmsg.RegisterMessage(TYPE_MAKE_GREETER, func() coolmsg.Message { return &MakeGreeter{} })
-	coolmsg.RegisterMessage(TYPE_MAKE_GREETER_REPLY, func() coolmsg.Message { return &MakeGreeterReply{} })
-	coolmsg.RegisterMessage(TYPE_DESTROY, func() coolmsg.Message { return &Destroy{} })
 	coolmsg.RegisterMessage(TYPE_HELLO, func() coolmsg.Message { return &Hello{} })
 }
 
@@ -83,8 +66,8 @@ func (r *RootObject) Message(ctx context.Context, cs *coolmsg.ConnServer, m cool
 		// to remove itself.
 		g.Self = id
 		log.Printf("I just greated a greeter with id: %d", id)
-		respond(&MakeGreeterReply{
-			GreeterID: id,
+		respond(&coolmsg.ObjectCreated{
+			Id: id,
 		})
 	default:
 		respond(coolmsg.ErrUnexpectedMessage)
@@ -122,7 +105,7 @@ func (g *Greeter) Message(ctx context.Context, cs *coolmsg.ConnServer, m coolmsg
 				From: g.Name,
 			})
 		})
-	case *Destroy:
+	case *coolmsg.Clunk:
 		log.Printf("destroying myself.")
 		cs.Clunk(g.Self)
 		respond(&coolmsg.Ok{})
