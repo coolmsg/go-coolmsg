@@ -12,11 +12,13 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-// Randomly generated global ID's
 const (
+	// From spec
 	TYPE_ERR = 0x81aba3f7522edc6b
 
-	ERRCODE_OBJECT_NOT_EXIST   = 0xab0547366de885bc
+	// From spec
+	ERRCODE_OBJECT_NOT_EXIST = 0xab0547366de885bc
+	// From spec
 	ERRCODE_UNEXPECTED_MESSAGE = 0xd47d4e94917934b2
 	ERRCODE_GENERIC            = 0
 
@@ -646,7 +648,8 @@ func init() {
 	RegisterStandardMessagesAndErrors(DefaultRegistry)
 }
 
-// Fields must remain backwards compatible.
+// Fields must remain compatible.
+// with spec
 type Error struct {
 	Code    uint64
 	Display string
