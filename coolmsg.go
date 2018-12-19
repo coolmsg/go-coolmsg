@@ -611,20 +611,6 @@ func RegisterStandardMessagesAndErrors(reg *Registry) {
 	reg.RegisterError(ERRCODE_UNEXPECTED_MESSAGE, func(*Error) error { return ErrUnexpectedMessage })
 }
 
-func BuildStandardRequest(oid, reqid uint64, v Message) Request {
-	buf, err := msgpack.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-
-	return Request{
-		ObjectId:    oid,
-		RequestId:   reqid,
-		MessageType: v.CoolMsg_TypeId(),
-		MessageData: buf,
-	}
-}
-
 func MsgpackUnmarshal(buf []byte, v interface{}) bool {
 	err := msgpack.Unmarshal(buf, v)
 	if err != nil {
