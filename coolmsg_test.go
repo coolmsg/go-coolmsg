@@ -15,11 +15,6 @@ const (
 	TYPE_TESTBAR = 0xd669132bfbb9724c
 )
 
-type TestObject struct {
-	clunked    bool
-	GotUnknown bool
-}
-
 type Foo struct {
 	X int
 }
@@ -34,6 +29,11 @@ type Bar struct {
 func (b *Bar) CoolMsg_TypeId() uint64            { return TYPE_TESTBAR }
 func (b *Bar) CoolMsg_Marshal() []byte           { return MsgpackMarshal(b) }
 func (b *Bar) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, b) }
+
+type TestObject struct {
+	clunked    bool
+	GotUnknown bool
+}
 
 func (to *TestObject) Message(ctx context.Context, s *ConnServer, m Message, respond RespondFunc) {
 
