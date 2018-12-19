@@ -1,6 +1,7 @@
 package coolmsg
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -20,7 +21,7 @@ const (
 	// From spec
 	TYPE_CLUNK = 0xcf3a50d623ee637d
 	// From spec
-	TYPE_OBJECT_CREATED = 0xd782cf4b395eca05
+	TYPE_OBJECT_REF = 0xd782cf4b395eca05
 
 	// From spec
 	ERRCODE_OBJECT_NOT_EXIST = 0xab0547366de885bc
@@ -617,7 +618,7 @@ func RegisterError(code uint64, mk func(e *Error) error) {
 func RegisterStandardMessagesAndErrors(reg *Registry) {
 	reg.RegisterMessage(TYPE_ERR, func() Message { return &Error{} })
 	reg.RegisterMessage(TYPE_OK, func() Message { return &Ok{} })
-	reg.RegisterMessage(TYPE_OBJECT_CREATED, func() Message { return &ObjectCreated{} })
+	reg.RegisterMessage(TYPE_OBJECT_REF, func() Message { return &ObjectRef{} })
 	reg.RegisterMessage(TYPE_CLUNK, func() Message { return &Clunk{} })
 	reg.RegisterError(ERRCODE_OBJECT_NOT_EXIST, func(*Error) error { return ErrObjectDoesNotExist })
 	reg.RegisterError(ERRCODE_UNEXPECTED_MESSAGE, func(*Error) error { return ErrUnexpectedMessage })
@@ -641,13 +642,26 @@ func MsgpackMarshal(v interface{}) []byte {
 	return buf
 }
 
+func MsgpackMarshalAsArray(v interface{}) []byte {
+	var buf bytes.Buffer
+	encoder := msgpack.NewEncoder(&buf)
+	encoder.StructAsArray(true)
+	err := encoder.Encode(v)
+	if err != nil {
+		panic(err)
+	}
+
+	return buf.Bytes()
+}
+
 func init() {
 	DefaultRegistry = NewRegistry()
 	RegisterStandardMessagesAndErrors(DefaultRegistry)
 }
 
 // Fields must remain compatible.
-// with spec
+// with spec, Order is significant as
+// Error is marshaled as an array.
 type Error struct {
 	Code    uint64
 	Display string
@@ -655,7 +669,7 @@ type Error struct {
 }
 
 func (m *Error) CoolMsg_TypeId() uint64            { return TYPE_ERR }
-func (m *Error) CoolMsg_Marshal() []byte           { return MsgpackMarshal(m) }
+func (m *Error) CoolMsg_Marshal() []byte           { return MsgpackMarshalAsArray(m) }
 func (m *Error) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, m) }
 func (m *Error) Error() string                     { return m.Display }
 
@@ -671,10 +685,10 @@ func (m *Clunk) CoolMsg_TypeId() uint64            { return TYPE_CLUNK }
 func (m *Clunk) CoolMsg_Marshal() []byte           { return []byte{} }
 func (m *Clunk) CoolMsg_Unmarshal(buf []byte) bool { return true }
 
-type ObjectCreated struct {
+type ObjectRef struct {
 	Id uint64
 }
 
-func (m *ObjectCreated) CoolMsg_TypeId() uint64            { return TYPE_OBJECT_CREATED }
-func (m *ObjectCreated) CoolMsg_Marshal() []byte           { return MsgpackMarshal(m) }
-func (m *ObjectCreated) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, m) }
+func (m *ObjectRef) CoolMsg_TypeId() uint64            { return TYPE_OBJECT_REF }
+func (m *ObjectRef) CoolMsg_Marshal() []byte           { return MsgpackMarshal(&m.Id) }
+func (m *ObjectRef) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, &m.Id) }

@@ -65,7 +65,7 @@ func (r *RootObject) Message(ctx context.Context, cs *coolmsg.ConnServer, m cool
 		// to remove itself.
 		g.Self = id
 		log.Printf("I just greated a greeter with id: %d", id)
-		respond(&coolmsg.ObjectCreated{
+		respond(&coolmsg.ObjectRef{
 			Id: id,
 		})
 	default:

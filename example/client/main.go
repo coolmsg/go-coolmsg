@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("error: %s", err)
 	}
 
-	greeterId := reply.(*coolmsg.ObjectCreated).Id
+	greeterId := reply.(*coolmsg.ObjectRef).Id
 
 	log.Printf("Saying hello to our new greeter...")
 
