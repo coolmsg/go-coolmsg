@@ -203,15 +203,17 @@ func (s *ConnServer) RegisterBootstrap(o Object) {
 
 func (s *ConnServer) Clunk(oid uint64) {
 	s.lock.Lock()
-	defer s.lock.Unlock()
 
 	obj, ok := s.objects[oid]
 	if !ok {
+		s.lock.Unlock()
 		return
 	}
 
-	obj.Clunk(s)
 	delete(s.objects, oid)
+	s.lock.Unlock()
+
+	obj.Clunk(s)
 }
 
 func (s *ConnServer) Go(f func()) {
