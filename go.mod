@@ -1,4 +1,4 @@
-module github.com/andrewchambers/coolmsg
+module github.com/coolmsg/coolmsg
 
 require (
 	github.com/vmihailenco/msgpack v4.0.1+incompatible
