@@ -14,7 +14,9 @@ import (
 // cd server && go build && ./server
 // cd client && go build && ./client
 
-// These types are all our custom messages
+// These types are all our custom messages, The numbers are randomly generated, but the idea is that once
+// you define a message type, you don't change it in backwards incompatible ways.
+// That way the number globally and uniquely identifies your message purpose and structure.
 
 const (
 	TYPE_MAKE_GREETER       = 0x9685d09cb0114f1f
