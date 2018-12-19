@@ -20,7 +20,6 @@ import (
 
 const (
 	TYPE_MAKE_GREETER = 0x9685d09cb0114f1f
-	TYPE_DESTROY      = 0xcf3a50d623ee637d
 	TYPE_HELLO        = 0xa79e175dc97ed3ab
 )
 
