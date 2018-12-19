@@ -137,9 +137,9 @@ func (s *Server) GoHandle(c io.ReadWriteCloser) {
 
 	select {
 	case <-s.connCtx.Done():
+		c.Close()
 		return
 	default:
-		c.Close()
 	}
 
 	sc := NewConnServer(s.options.ConnOptions)
@@ -170,8 +170,10 @@ func NewConnServer(options ConnServerOptions) *ConnServer {
 		requestSem = semaphore.NewWeighted(int64(options.MaxOutstandingRequests))
 	}
 	s := &ConnServer{
-		options:    options,
-		objects:    make(map[uint64]Object),
+		options:       options,
+		objects:       make(map[uint64]Object),
+		objectCounter: 2, // 0, 1 are never used, it is reserved for bootstrap.
+
 		requestSem: requestSem,
 	}
 
@@ -186,9 +188,8 @@ func (s *ConnServer) Register(o Object) uint64 {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// 0 is never used, it is reserved for bootstrap.
-	s.objectCounter += 1
 	oid := s.objectCounter
+	s.objectCounter += 1
 	s.objects[oid] = o
 	return oid
 }
