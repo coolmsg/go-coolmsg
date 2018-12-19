@@ -30,7 +30,7 @@ func main() {
 		signal.Notify(c, os.Interrupt)
 		<-c
 		fmt.Println("Got interrupt signal, closing down...")
-		l.Close()
+		_ = l.Close()
 		signal.Reset()
 	}()
 
@@ -47,7 +47,6 @@ func main() {
 
 	_ = l.Close()
 
-	// Wait for any in progress requests to end gracefully.
 	log.Printf("waiting for connections to end gracefully...")
 	s.Wait()
 }
