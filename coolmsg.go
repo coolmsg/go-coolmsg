@@ -15,6 +15,8 @@ import (
 const (
 	// From spec
 	TYPE_ERR = 0x81aba3f7522edc6b
+	// From spec
+	TYPE_OK = 0xd4924862b91c639d
 
 	// From spec
 	ERRCODE_OBJECT_NOT_EXIST = 0xab0547366de885bc
@@ -609,6 +611,7 @@ func RegisterError(code uint64, mk func(e *Error) error) {
 
 func RegisterStandardMessagesAndErrors(reg *Registry) {
 	reg.RegisterMessage(TYPE_ERR, func() Message { return &Error{} })
+	reg.RegisterMessage(TYPE_OK, func() Message { return &Ok{} })
 	reg.RegisterError(ERRCODE_OBJECT_NOT_EXIST, func(*Error) error { return ErrObjectDoesNotExist })
 	reg.RegisterError(ERRCODE_UNEXPECTED_MESSAGE, func(*Error) error { return ErrUnexpectedMessage })
 }
@@ -648,3 +651,9 @@ func (e *Error) CoolMsg_TypeId() uint64            { return TYPE_ERR }
 func (e *Error) CoolMsg_Marshal() []byte           { return MsgpackMarshal(e) }
 func (e *Error) CoolMsg_Unmarshal(buf []byte) bool { return MsgpackUnmarshal(buf, e) }
 func (e *Error) Error() string                     { return e.Display }
+
+type Ok struct{}
+
+func (m *Ok) CoolMsg_TypeId() uint64            { return TYPE_OK }
+func (m *Ok) CoolMsg_Marshal() []byte           { return []byte{} }
+func (m *Ok) CoolMsg_Unmarshal(buf []byte) bool { return true }
