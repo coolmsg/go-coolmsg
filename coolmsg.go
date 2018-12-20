@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sync"
 
 	"github.com/vmihailenco/msgpack"
@@ -135,6 +136,16 @@ func NewServer(options ServerOptions) *Server {
 		connCtx:   ctx,
 		cancelCtx: cancelCtx,
 		options:   options,
+	}
+}
+
+func (s *Server) Serve(l net.Listener) error {
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			return err
+		}
+		s.GoHandle(c)
 	}
 }
 

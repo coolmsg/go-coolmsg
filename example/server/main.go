@@ -29,21 +29,17 @@ func main() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c
-		fmt.Println("Got interrupt signal, closing down...")
+		fmt.Println("Got interrupt signal, closing down gently...")
 		_ = l.Close()
-		signal.Reset()
+		<-c
+		fmt.Println("Got second interrupt signal, closing down brutally.")
+		os.Exit(1)
 	}()
 
 	log.Printf("listening on %s", listenAddr)
 
-	for {
-		c, err := l.Accept()
-		if err != nil {
-			log.Printf("error accepting connection: %s", err)
-			break
-		}
-		s.GoHandle(c)
-	}
+	err = s.Serve(l)
+	log.Printf("error accepting connection: %s", err)
 
 	_ = l.Close()
 
