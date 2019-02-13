@@ -36,6 +36,7 @@ const (
 
 var (
 	ErrBadResponse        = errors.New("bad response.")
+	ErrRequestCancelled   = errors.New("request cancelled.")
 	ErrClientShutdown     = errors.New("client has been shutdown.")
 	ErrObjectDoesNotExist = &Error{Code: ERRCODE_OBJECT_NOT_EXIST, Display: "object does not exist."}
 	ErrUnexpectedMessage  = &Error{Code: ERRCODE_UNEXPECTED_MESSAGE, Display: "unexpected message."}
@@ -502,11 +503,27 @@ func NewClient(conn io.ReadWriteCloser, options ClientOptions) *Client {
 }
 
 func (c *Client) Send(oid uint64, arg Message) (interface{}, error) {
-	return c.SendWithReg(c.options.Registry, oid, arg)
+	return c.SendCtx(context.Background(), oid, arg)
 }
 
 func (c *Client) SendWithReg(reg *Registry, oid uint64, arg Message) (interface{}, error) {
-	m, err := c.RawSendParsedReply(reg, oid, arg.CoolMsg_TypeId(), arg.CoolMsg_Marshal())
+	return c.SendWithRegCtx(context.Background(), reg, oid, arg)
+}
+
+func (c *Client) RawSendParsedReply(reg *Registry, oid uint64, paramType uint64, paramData []byte) (interface{}, error) {
+	return c.RawSendParsedReplyCtx(context.Background(), reg, oid, paramType, paramData)
+}
+
+func (c *Client) RawSend(oid uint64, paramType uint64, paramData []byte) (Response, error) {
+	return c.RawSendCtx(context.Background(), oid, paramType, paramData)
+}
+
+func (c *Client) SendCtx(ctx context.Context, oid uint64, arg Message) (interface{}, error) {
+	return c.SendWithRegCtx(ctx, c.options.Registry, oid, arg)
+}
+
+func (c *Client) SendWithRegCtx(ctx context.Context, reg *Registry, oid uint64, arg Message) (interface{}, error) {
+	m, err := c.RawSendParsedReplyCtx(ctx, reg, oid, arg.CoolMsg_TypeId(), arg.CoolMsg_Marshal())
 	if err != nil {
 		return nil, err
 	}
@@ -514,8 +531,8 @@ func (c *Client) SendWithReg(reg *Registry, oid uint64, arg Message) (interface{
 	return m, nil
 }
 
-func (c *Client) RawSendParsedReply(reg *Registry, oid uint64, paramType uint64, paramData []byte) (interface{}, error) {
-	resp, err := c.RawSend(oid, paramType, paramData)
+func (c *Client) RawSendParsedReplyCtx(ctx context.Context, reg *Registry, oid uint64, paramType uint64, paramData []byte) (interface{}, error) {
+	resp, err := c.RawSendCtx(ctx, oid, paramType, paramData)
 	if err != nil {
 		return nil, err
 	}
@@ -532,7 +549,7 @@ func (c *Client) RawSendParsedReply(reg *Registry, oid uint64, paramType uint64,
 	return m, nil
 }
 
-func (c *Client) RawSend(oid uint64, paramType uint64, paramData []byte) (Response, error) {
+func (c *Client) RawSendCtx(ctx context.Context, oid uint64, paramType uint64, paramData []byte) (Response, error) {
 	rChan := make(chan Response, 1)
 	c.requestsLock.Lock()
 	reqId := c.requestCounter
@@ -552,6 +569,12 @@ func (c *Client) RawSend(oid uint64, paramType uint64, paramData []byte) (Respon
 	}
 
 	select {
+	case <-ctx.Done():
+		c.requestsLock.Lock()
+		delete(c.requests, reqId)
+		c.requestsLock.Unlock()
+
+		return Response{}, ErrRequestCancelled
 	case <-c.workerContext.Done():
 		return Response{}, ErrClientShutdown
 	case response := <-rChan:
