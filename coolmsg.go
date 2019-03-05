@@ -37,6 +37,7 @@ const (
 
 var (
 	ErrBadResponse        = errors.New("bad response.")
+	ErrPayloadTooBig      = errors.New("payload too big.")
 	ErrRequestCancelled   = errors.New("request cancelled.")
 	ErrClientShutdown     = errors.New("client has been shutdown.")
 	ErrObjectDoesNotExist = &Error{Code: ERRCODE_OBJECT_NOT_EXIST, Display: "object does not exist."}
@@ -71,6 +72,7 @@ type ServerOptions struct {
 }
 
 type ConnServerOptions struct {
+	MaxRequestSize uint64
 	// Each  will stop reading new
 	// requests if this is exceeded, zero
 	// means unlimited.
@@ -98,6 +100,7 @@ type ConnServer struct {
 }
 
 type ClientOptions struct {
+	MaxResponseSize uint64
 	// If nil, defaults to DefaultRegistry
 	Registry *Registry
 }
@@ -286,7 +289,7 @@ func (s *ConnServer) Serve(ctx context.Context, c io.ReadWriteCloser) {
 				}
 			}
 
-			req, err := ReadRequest(c)
+			req, err := ReadRequest(c, s.options.MaxRequestSize)
 			if err != nil {
 				break
 			}
@@ -360,7 +363,7 @@ func WriteRequest(w io.Writer, req Request) error {
 	return nil
 }
 
-func ReadRequest(r io.Reader) (Request, error) {
+func ReadRequest(r io.Reader, maxRequestSize uint64) (Request, error) {
 	header := [32]byte{}
 
 	_, err := io.ReadFull(r, header[:])
@@ -374,6 +377,9 @@ func ReadRequest(r io.Reader) (Request, error) {
 	req.ObjectId = binary.BigEndian.Uint64(header[8:16])
 	req.MessageType = binary.BigEndian.Uint64(header[16:24])
 	paramLen := binary.BigEndian.Uint64(header[24:32])
+	if maxRequestSize != 0 && paramLen > maxRequestSize {
+		return Request{}, ErrPayloadTooBig
+	}
 	paramData := make([]byte, paramLen)
 
 	_, err = io.ReadFull(r, paramData)
@@ -406,7 +412,7 @@ func WriteResponse(w io.Writer, resp Response) error {
 	return nil
 }
 
-func ReadResponse(r io.Reader) (Response, error) {
+func ReadResponse(r io.Reader, maxResponseSize uint64) (Response, error) {
 	header := [24]byte{}
 
 	_, err := io.ReadFull(r, header[:])
@@ -419,6 +425,9 @@ func ReadResponse(r io.Reader) (Response, error) {
 	resp.RequestId = binary.BigEndian.Uint64(header[0:8])
 	resp.ResponseType = binary.BigEndian.Uint64(header[8:16])
 	responseLen := binary.BigEndian.Uint64(header[16:24])
+	if maxResponseSize != 0 && responseLen > maxResponseSize {
+		return Response{}, ErrPayloadTooBig
+	}
 	responseData := make([]byte, responseLen)
 
 	_, err = io.ReadFull(r, responseData)
@@ -476,7 +485,7 @@ func NewClient(conn io.ReadWriteCloser, options ClientOptions) *Client {
 		defer c.wg.Done()
 
 		for {
-			resp, err := ReadResponse(conn)
+			resp, err := ReadResponse(conn, options.MaxResponseSize)
 			if err != nil {
 				return
 			}

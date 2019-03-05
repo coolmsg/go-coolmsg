@@ -201,7 +201,7 @@ func TestResponseReadWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r2, err := ReadResponse(&b)
+	r2, err := ReadResponse(&b, 9999)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestRequestReadWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r2, err := ReadRequest(&b)
+	r2, err := ReadRequest(&b, 9999)
 	if err != nil {
 		t.Fatal(err)
 	}
