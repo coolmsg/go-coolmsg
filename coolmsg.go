@@ -77,7 +77,14 @@ type ConnServerOptions struct {
 	// requests if this is exceeded, zero
 	// means unlimited.
 	MaxOutstandingRequests uint64
-	BootstrapFunc          func() Object
+	// This function is used to create the root object
+	// a client can send messages to.
+	//
+	// It takes a connection object as a way for out of band connection
+	// information to be used while creating the root object.
+	// One example is using a unix socket to get the remote user id,
+	// and then using that for authentication.
+	BootstrapFunc func(io.ReadWriteCloser) Object
 	// If nil, defaults to DefaultRegistry
 	Registry *Registry
 }
@@ -163,7 +170,7 @@ func (s *Server) GoHandle(c io.ReadWriteCloser) {
 	default:
 	}
 
-	sc := NewConnServer(s.options.ConnOptions)
+	sc := NewConnServer(c, s.options.ConnOptions)
 
 	s.wg.Add(1)
 	go func() {
@@ -180,7 +187,7 @@ func (s *Server) Close() {
 	s.cancelCtx()
 }
 
-func NewConnServer(options ConnServerOptions) *ConnServer {
+func NewConnServer(c io.ReadWriteCloser, options ConnServerOptions) *ConnServer {
 
 	if options.Registry == nil {
 		options.Registry = DefaultRegistry
@@ -199,7 +206,7 @@ func NewConnServer(options ConnServerOptions) *ConnServer {
 	}
 
 	if options.BootstrapFunc != nil {
-		s.RegisterBootstrap(options.BootstrapFunc())
+		s.RegisterBootstrap(options.BootstrapFunc(c))
 	}
 
 	return s

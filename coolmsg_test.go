@@ -81,9 +81,9 @@ func TestBasicServerRequestResponse(t *testing.T) {
 	reg.RegisterMessage(TYPE_TESTFOO, func() Message { return &Foo{} })
 
 	to := &TestObject{}
-	s := NewConnServer(ConnServerOptions{
+	s := NewConnServer(a, ConnServerOptions{
 		Registry:      reg,
-		BootstrapFunc: func() Object { return to },
+		BootstrapFunc: func(c io.ReadWriteCloser) Object { return to },
 	})
 
 	go s.Serve(ctx, a)
@@ -135,10 +135,10 @@ func TestConcurrencyLimits(t *testing.T) {
 	reg.RegisterMessage(TYPE_TESTBAR, func() Message { return &Bar{} })
 
 	to := &TestObject{}
-	s := NewConnServer(ConnServerOptions{
+	s := NewConnServer(a, ConnServerOptions{
 		Registry:               reg,
 		MaxOutstandingRequests: 1,
-		BootstrapFunc:          func() Object { return to },
+		BootstrapFunc:          func(c io.ReadWriteCloser) Object { return to },
 	})
 
 	go s.Serve(ctx, a)

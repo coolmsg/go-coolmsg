@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -16,7 +17,7 @@ func main() {
 	s := coolmsg.NewServer(coolmsg.ServerOptions{
 		ConnOptions: coolmsg.ConnServerOptions{
 			// This function returns the bootstrap object, which will be at object id 1 for each connection.
-			BootstrapFunc: func() coolmsg.Object { return &example.RootObject{} },
+			BootstrapFunc: func(c io.ReadWriteCloser) coolmsg.Object { return &example.RootObject{} },
 		},
 	})
 
