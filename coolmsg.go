@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -656,6 +657,24 @@ func RegisterStandardMessagesAndErrors(reg *Registry) {
 	reg.RegisterMessage(TYPE_CLUNK, func() Message { return &Clunk{} })
 	reg.RegisterError(ERRCODE_OBJECT_NOT_EXIST, func(*Error) error { return ErrObjectDoesNotExist })
 	reg.RegisterError(ERRCODE_UNEXPECTED_MESSAGE, func(*Error) error { return ErrUnexpectedMessage })
+}
+
+func JsonUnmarshal(buf []byte, v interface{}) bool {
+	err := json.Unmarshal(buf, v)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func JsonMarshal(v interface{}) []byte {
+	buf, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+
+	return buf
 }
 
 func MsgpackUnmarshal(buf []byte, v interface{}) bool {
