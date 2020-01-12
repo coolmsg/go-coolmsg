@@ -73,7 +73,7 @@ type ServerOptions struct {
 
 type ConnServerOptions struct {
 	MaxRequestSize uint64
-	// Each  will stop reading new
+	// Each connection will stop reading new
 	// requests if this is exceeded, zero
 	// means unlimited.
 	MaxOutstandingRequests uint64
